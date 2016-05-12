@@ -65,7 +65,7 @@ static struct module_pin_mux mmc0_pin_mux[] = {
 	{OFFSET(mmc0_clk), (MODE(0) | RXACTIVE | PULLUP_EN)},	/* MMC0_CLK */
 	{OFFSET(mmc0_cmd), (MODE(0) | RXACTIVE | PULLUP_EN)},	/* MMC0_CMD */
 	{OFFSET(mcasp0_aclkr), (MODE(4) | RXACTIVE)},		/* MMC0_WP */
-	{OFFSET(spi0_cs1), (MODE(5) | RXACTIVE | PULLUP_EN)},	/* MMC0_CD */
+	{OFFSET(spi0_cs1), (MODE(7) | RXACTIVE | PULLUP_EN)},	/* MMC0_CD */
 	{-1},
 };
 
@@ -112,11 +112,18 @@ static struct module_pin_mux i2c0_pin_mux[] = {
 };
 
 static struct module_pin_mux i2c1_pin_mux[] = {
-	{OFFSET(spi0_d1), (MODE(2) | RXACTIVE |
+	{OFFSET(uart0_ctsn), (MODE(3) | RXACTIVE |
 			PULLUDEN | SLEWCTRL)},	/* I2C_DATA */
-	{OFFSET(spi0_cs0), (MODE(2) | RXACTIVE |
+	{OFFSET(uart0_rtsn), (MODE(3) | RXACTIVE |
 			PULLUDEN | SLEWCTRL)},	/* I2C_SCLK */
 	{-1},
+};
+
+static struct module_pin_mux disable_fan_mux[] = {
+    {OFFSET(uart0_rtsn), (MODE(7) | PULLUDDIS)},
+    {OFFSET(uart0_ctsn), (MODE(7) | PULLUDDIS)},    
+    {OFFSET(uart1_rxd),  (MODE(7) | PULLUDDIS)},
+    {-1},   
 };
 
 static struct module_pin_mux spi0_pin_mux[] = {
@@ -128,6 +135,24 @@ static struct module_pin_mux spi0_pin_mux[] = {
 			PULLUDEN | PULLUP_EN)},			/* SPI0_CS0 */
 	{-1},
 };
+
+/* pin mux for SPI1 */
+static struct module_pin_mux spi1_pin_mux[] = {
+#if 0
+    { OFFSET(mcasp0_aclkx), (MODE(3) | RXACTIVE | PULLUDEN) },
+    { OFFSET(mcasp0_fsx),   (MODE(3) | RXACTIVE | PULLUDEN | PULLUP_EN) },
+    { OFFSET(mcasp0_axr0),   (MODE(3) | RXACTIVE | PULLUDEN) },
+    { OFFSET(mcasp0_ahclkr), (MODE(3) | RXACTIVE | PULLUDEN | PULLUP_EN) },
+#else
+    { OFFSET(mcasp0_aclkx), (MODE(3)) }, //sck
+    { OFFSET(mcasp0_fsx),   (MODE(3)) }, //d0
+    { OFFSET(mcasp0_axr0),   (MODE(3)) },  //d1
+    { OFFSET(mcasp0_ahclkr), (MODE(3)) }, //spi1_cs0
+    { OFFSET(uart1_rtsn),    (MODE(4))}, //spi1_cs1
+#endif
+    {NULL, 0},
+};
+
 
 static struct module_pin_mux gpio0_7_pin_mux[] = {
 	{OFFSET(ecap0_in_pwm0_out), (MODE(7) | PULLUDEN)},	/* GPIO0_7 */
@@ -327,18 +352,27 @@ static unsigned short detect_daughter_board_profile(void)
 
 void enable_board_pin_mux(struct am335x_baseboard_id *header)
 {
-#if 1  //Truby
+#if 1
 		/* Beaglebone pinmux */
-		configure_module_pin_mux(i2c1_pin_mux);
 		configure_module_pin_mux(mii1_pin_mux);
 		configure_module_pin_mux(mmc0_pin_mux);
-#ifndef CONFIG_NOR
 		configure_module_pin_mux(mmc1_pin_mux);
-#endif
-#if defined(CONFIG_NOR) && !defined(CONFIG_NOR_BOOT)
-		configure_module_pin_mux(bone_norcape_pin_mux);
-#endif
+        
+		printf("configure_module_pin_mux spi1\n");
+		configure_module_pin_mux(spi1_pin_mux);
 
+        //FIXME: 
+        // BBP 1S -> I2C1
+		if (!strncmp("BBP1S", header->name, 5)) {
+			configure_module_pin_mux(i2c1_pin_mux);
+			printf("BBP1S enable i2c1\n");
+		}
+
+        // BBP 1 -> Fan gpio
+		if (strncmp("BBP1S", header->name, 5) && (!strncmp("BBP1", header->name, 4))) {
+			printf("BBP1 disable fan\n");
+			configure_module_pin_mux(disable_fan_mux);
+		}
 #else
 
 	/* Do board-specific muxes. */

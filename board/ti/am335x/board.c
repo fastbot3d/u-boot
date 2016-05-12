@@ -670,7 +670,6 @@ void s_init(void)
 		//puts("Could not get board ID.\n");
 #endif
 
-#if 0  //Truby
 	/* Check if baseboard eeprom is available */
 	if (i2c_probe(CONFIG_SYS_I2C_EEPROM_ADDR)) {
 		puts("Could not probe the EEPROM; something fundamentally "
@@ -684,6 +683,10 @@ void s_init(void)
     			" wrong on the I2C bus.\n");
 	}
 
+	printf("eeprom magic:0x%x, name:%s, version:%s, in EEPROM\n",
+			header.magic, header.name, header.version);
+
+#if 0  //Truby
 	if (header.magic != 0xEE3355AA) {
 		/*
 		 * read the eeprom using i2c again,
@@ -707,6 +710,27 @@ void s_init(void)
     //Truby
 	enable_board_pin_mux(&header);
   
+	if (!strncmp("BBP1S", header.name, 5)) {
+		int slave_addr = 0x7F;
+		int old_bus_num;
+		old_bus_num = i2c_get_bus_num();
+		i2c_set_bus_num(1);
+
+		if (i2c_probe(slave_addr)) {
+			puts("Could not probe the pca9685\n");
+		} else {
+			#define LED_FULL        (1 << 4)
+			unsigned char reset = LED_FULL;
+			if (i2c_write(slave_addr, 0xFD, 1, &reset, sizeof(reset))) {
+				puts("1 failed to reset pca9685 on the I2C bus.\n");
+			}
+			reset = 0;
+			if (i2c_write(slave_addr, 0xFC, 1, &reset, sizeof(reset))) {
+				puts("2 failed to reset pca9685 on the I2C bus.\n");
+			}
+		}
+		i2c_set_bus_num(old_bus_num);
+	}
 	if (!strncmp("A335X_SK", header.name, HDR_NAME_LEN)) {
 		/*
 		 * EVM SK 1.2A and later use gpio0_7 to enable DDR3.
@@ -720,6 +744,12 @@ void s_init(void)
 	am33xx_spl_board_init();
 #endif
 
+    //Truby: just for test
+    //gpio_request(GPIO_DDR_VTT_EN, "ddr_vtt_en");
+    //gpio_direction_output(GPIO_DDR_VTT_EN, 1);
+    //gpio_set_value(GPIO_DDR_VTT_EN, 1);
+    //End of test!
+    //
 	puts("Config DDR.\n");
     // Truby 20141001
 	//	config_ddr(303, MT41J128MJT125_IOCTRL_VALUE, &ddr3_data,
@@ -775,7 +805,7 @@ int board_init(void)
         //gpio_direction_output(89, 1);
 
         /* Display logo */
-        Lcd_Init();
+        //Lcd_Init();
 #endif
 
 	gpmc_init();
@@ -852,7 +882,7 @@ int board_eth_init(bd_t *bis)
 	uint8_t mac_addr[6];
 	uint32_t mac_hi, mac_lo;
     
-    printf("[Truby]: board_eth_init\n");
+    //printf("[Truby]: board_eth_init\n");
 	/* try reading mac address from efuse */
 	mac_lo = readl(&cdev->macid0l);
 	mac_hi = readl(&cdev->macid0h);
@@ -863,9 +893,9 @@ int board_eth_init(bd_t *bis)
 	mac_addr[4] = mac_lo & 0xFF;
 	mac_addr[5] = (mac_lo & 0xFF00) >> 8;
     
-    printf("[Truby]: mac from efuse: %x:%x:%x:%x:%x:%x\n",
-            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], 
-            mac_addr[4], mac_addr[5]);
+    //printf("[Truby]: mac from efuse: %x:%x:%x:%x:%x:%x\n",
+     //       mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], 
+     //       mac_addr[4], mac_addr[5]);
 
 #if (defined(CONFIG_DRIVER_TI_CPSW) && !defined(CONFIG_SPL_BUILD)) || \
 	(defined(CONFIG_SPL_ETH_SUPPORT) && defined(CONFIG_SPL_BUILD))

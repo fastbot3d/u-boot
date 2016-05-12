@@ -108,8 +108,12 @@ static const char driver_desc[] = DRIVER_DESC;
 			|USB_CDC_PACKET_TYPE_PROMISCUOUS \
 			|USB_CDC_PACKET_TYPE_DIRECTED)
 
+/* Truby Add for usb rndis connection timeout longer */
+#if defined(CONFIG_RESTORE_FLASH) && defined(CONFIG_SPL_USBETH_SUPPORT)
+#define USB_CONNECT_TIMEOUT (15 * CONFIG_SYS_HZ)
+#else
 #define USB_CONNECT_TIMEOUT (3 * CONFIG_SYS_HZ)
-
+#endif
 /*-------------------------------------------------------------------------*/
 
 struct eth_dev {

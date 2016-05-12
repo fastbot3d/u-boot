@@ -22,6 +22,7 @@
 #include <asm/arch/omap.h>
 #include <asm/arch/mmc_host_def.h>
 #include <asm/arch/sys_proto.h>
+#include <spi.h>
 
 /*
  * This is used to verify if the configuration header
@@ -50,8 +51,48 @@ u32 spl_boot_mode(void)
 	return omap_bootmode;
 }
 
+//lkj
+static void spi_dac088_disable()
+{
+    struct spi_slave *slave;
+    int ret = 0;
+    unsigned short din;
+    unsigned short dout = 0;
+    unsigned char dout_0 = 0,  dout_1 = 0;
+
+    dout_0 = ((0<<4) | (1<<7)) & 0xf;
+    slave = spi_setup_slave(1, 1, 2000000, SPI_MODE_0);
+    if(!slave) {
+        printf("failed to setup spi slave");
+        return;
+    }
+
+    ret = spi_claim_bus(slave);
+    if (ret) {
+        printf("failed to claim spi slave\n");
+        spi_free_slave(slave);
+        return;
+    }
+
+    /*x,y,z, e, e0,e1, usr, exp_usr */
+    spi_xfer(slave, 8, &dout_0 , NULL, SPI_XFER_BEGIN | SPI_XFER_END);
+    spi_xfer(slave, 8, &dout_0 , NULL, SPI_XFER_BEGIN | SPI_XFER_END);
+    spi_xfer(slave, 8, &dout_0 , NULL, SPI_XFER_BEGIN | SPI_XFER_END);
+    spi_xfer(slave, 8, &dout_0 , NULL, SPI_XFER_BEGIN | SPI_XFER_END);
+
+    spi_xfer(slave, 8, &dout_0 , NULL, SPI_XFER_BEGIN | SPI_XFER_END);
+    spi_xfer(slave, 8, &dout_0 , NULL, SPI_XFER_BEGIN | SPI_XFER_END);
+    spi_xfer(slave, 8, &dout_0 , NULL, SPI_XFER_BEGIN | SPI_XFER_END);
+    spi_xfer(slave, 8, &dout_0 , NULL, SPI_XFER_BEGIN | SPI_XFER_END);
+
+    spi_release_bus(slave);
+    spi_free_slave(slave);
+    printf("spi done\n");
+}
+
 void spl_board_init(void)
 {
+	spi_dac088_disable();
 #ifdef CONFIG_SPL_NAND_SUPPORT
 	gpmc_init();
 #endif

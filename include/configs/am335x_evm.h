@@ -39,6 +39,10 @@
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_INITRD_TAG
 
+/* lkj
+#define CONFIG_LCD_TCM
+*/
+
 /* Custom script for NOR */
 #define CONFIG_SYS_LDSCRIPT		"board/ti/am335x/u-boot.lds"
 
@@ -153,34 +157,74 @@
 
 #endif
 
+/*lkj "setenv mmcroot /dev/mmcblk1p2;" \ */
+
 #ifndef CONFIG_RESTORE_FLASH
 #define CONFIG_BOOTCOMMAND \
+	"setenv mmcdev 0;" \
+	"echo SD/MMC search on device ${mmcdev};" \
 	"mmc dev ${mmcdev}; if mmc rescan; then " \
 		"echo SD/MMC found on device ${mmcdev};" \
 		"if run loadbootenv; then " \
 			"echo Loaded environment from ${bootenv};" \
 			"run importbootenv;" \
+		"else " \
+			"echo try mmc1;" \
+			"setenv mmcdev 1;" \
+			"mmc dev ${mmcdev};" \
+				"echo SD/MMC found on device ${mmcdev};" \
+				"if run loadbootenv; then " \
+					"echo Loaded environment from ${bootenv};" \
+					"run importbootenv;" \
+				"fi;" \
+				"if test -n $uenvcmd; then " \
+					"run uenvcmd;" \
+				"fi;" \
+				"if run loaduimage; then " \
+					"run mmcboot;" \
+				"elif run loaduimagefat; then " \
+					"run mmcboot;" \
+				"else " \
+					"echo Could not find ${bootfile} ;" \
+				"fi;" \
 		"fi;" \
 		"if test -n $uenvcmd; then " \
 			"echo Running uenvcmd ...;" \
 			"run uenvcmd;" \
 		"fi;" \
-		"if run loaduimagefat; then " \
+		"if run loaduimage; then " \
 			"run mmcboot;" \
-		"elif run loaduimage; then " \
+		"elif run loaduimagefat; then " \
 			"run mmcboot;" \
 		"else " \
 			"echo Could not find ${bootfile} ;" \
 		"fi;" \
 	"else " \
-		"run nandboot;" \
+		"setenv mmcdev 1;" \
+		"mmc dev ${mmcdev}; " \
+			"echo SD/MMC found on device ${mmcdev};" \
+			"if run loadbootenv; then " \
+				"echo Loaded environment from ${bootenv};" \
+				"run importbootenv;" \
+			"fi;" \
+			"if test -n $uenvcmd; then " \
+				"echo Running uenvcmd ...;" \
+				"run uenvcmd;" \
+			"fi;" \
+			"if run loaduimage; then " \
+				"run mmcboot;" \
+			"elif run loaduimagefat; then " \
+				"run mmcboot;" \
+			"else " \
+				"echo Could not find ${bootfile} ;" \
+			"fi;" \
 	"fi;" \
 
 #else
 
 #undef CONFIG_BOOTDELAY
 #define CONFIG_BOOTDELAY	0
-
+/*  //Truby
 #ifdef CONFIG_SPL_USBETH_SUPPORT
 #define CONFIG_BOOTCOMMAND \
 	"setenv autoload no; " \
@@ -199,6 +243,28 @@
 	"fi"
 #endif
 #endif
+*/
+
+#ifdef CONFIG_SPL_USBETH_SUPPORT
+#define CONFIG_BOOTCOMMAND \
+	"setenv autoload no; " \
+	"setenv ethact usb_ether; " \
+	"dhcp; "	\
+	"if tftp 81000000 uImage; then "	\
+	"bootm 81000000; "	\
+	"fi"
+#else
+#define CONFIG_BOOTCOMMAND \
+	"setenv autoload no; " \
+	"setenv ethact cpsw; " \
+	"dhcp; "	\
+	"if tftp 80000000 debrick.scr; then "	\
+		"source 80000000; "	\
+	"fi"
+#endif
+#endif
+
+
 
 /* Clock Defines */
 #define V_OSCK				24000000  /* Clock output from T2 */
@@ -238,6 +304,7 @@
 #define CONFIG_CMD_FAT
 #define CONFIG_FAT_WRITE
 #define CONFIG_CMD_EXT2
+
 
 #define CONFIG_SPI
 #define CONFIG_OMAP3_SPI
@@ -282,7 +349,7 @@
  /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS		1		/*  1 bank of DRAM */
 #define PHYS_DRAM_1			0x80000000	/* DRAM Bank #1 */
-#define CONFIG_MAX_RAM_BANK_SIZE	(1024 << 20)	/* 1GB */
+#define CONFIG_MAX_RAM_BANK_SIZE	(1024 << 19)	/*1GB , lkj 512M*/
 
 #define CONFIG_SYS_SDRAM_BASE		PHYS_DRAM_1
 #define CONFIG_SYS_INIT_SP_ADDR         (NON_SECURE_SRAM_END - \
@@ -315,7 +382,7 @@
 #define CONFIG_DRIVER_OMAP24XX_I2C
 #define CONFIG_CMD_EEPROM
 #define CONFIG_ENV_EEPROM_IS_ON_I2C
-#define CONFIG_SYS_I2C_EEPROM_ADDR	0x50	/* Main EEPROM */
+#define CONFIG_SYS_I2C_EEPROM_ADDR	0x57	/* Main EEPROM */
 #define CONFIG_SYS_I2C_EEPROM_ADDR_LEN	2
 #define CONFIG_SYS_I2C_MULTI_EEPROMS
 
@@ -432,10 +499,12 @@
 #define CONFIG_USB_GADGET_DUALSPEED
 #define CONFIG_USB_GADGET_VBUS_DRAW	2
 #define CONFIG_MUSB_HOST
+/* lkj 
 #define CONFIG_AM335X_USB0
 #define CONFIG_AM335X_USB0_MODE	MUSB_PERIPHERAL
 #define CONFIG_AM335X_USB1
 #define CONFIG_AM335X_USB1_MODE MUSB_HOST
+*/
 
 #ifdef CONFIG_MUSB_HOST
 #define CONFIG_CMD_USB
@@ -466,10 +535,9 @@
 #define NAND_ENV_OFFSET                0x260000 /* environment starts here */
 
 /* ethernet gadget conflicts with fastboot, so disabled */
-/*
 #define CONFIG_USB_ETHER
 #define CONFIG_USB_ETH_RNDIS
-#define CONFIG_USBNET_HOST_ADDR	"de:ad:be:af:00:00"*/
+#define CONFIG_USBNET_HOST_ADDR	"de:ad:be:af:00:00"
 #endif /* CONFIG_MUSB_GADGET */
 
 /*
@@ -586,6 +654,6 @@
 #endif  /* NOR support */
 
 /* LCD Support */
-#define CONFIG_LCD_TCM
+/* #define CONFIG_LCD_TCM */ 
 
 #endif	/* ! __CONFIG_AM335X_EVM_H */

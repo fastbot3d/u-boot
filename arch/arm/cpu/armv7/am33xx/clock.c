@@ -201,6 +201,11 @@ static void enable_per_clocks(void)
 	while (readl(&cmper->spi0clkctrl) != PRCM_MOD_EN)
 		;
 
+	/* spi1 lkj */
+	writel(PRCM_MOD_EN, &cmper->spi1clkctrl);
+	while (readl(&cmper->spi1clkctrl) != PRCM_MOD_EN)
+		;
+
 	/* RTC */
 	writel(PRCM_MOD_EN, &cmrtc->rtcclkctrl);
 	while (readl(&cmrtc->rtcclkctrl) != PRCM_MOD_EN)

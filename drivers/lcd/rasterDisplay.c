@@ -120,8 +120,10 @@ static void SetUpLCD(void)
                                             RASTER_AC_BIAS_HIGH, 0, 255);
 
     /* Configuring timing parameter for 1024x600 */
-    RasterHparamConfig(SOC_LCDC_0_REGS, 1024, 30, 1, 46);
-    RasterVparamConfig(SOC_LCDC_0_REGS, 600, 1, 12, 22);
+    //lkj RasterHparamConfig(SOC_LCDC_0_REGS, 1024, 30, 1, 46);
+    //lkj RasterVparamConfig(SOC_LCDC_0_REGS, 600, 1, 12, 22);
+    RasterHparamConfig(SOC_LCDC_0_REGS, 1024, 20, 160, 140);
+    RasterVparamConfig(SOC_LCDC_0_REGS, 600, 3, 12, 20);
 
     RasterFIFODMADelayConfig(SOC_LCDC_0_REGS, 128);
 }

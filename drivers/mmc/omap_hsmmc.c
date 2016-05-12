@@ -535,6 +535,22 @@ static void mmc_set_ios(struct mmc *mmc)
 	writel(readl(&mmc_base->sysctl) | CEN_ENABLE, &mmc_base->sysctl);
 }
 
+int omap_mmc0_getcd(struct mmc *mmc)
+{
+	int ret = 0;
+	struct mmc_host *host = (struct mmc_host *)mmc->priv;
+
+	ret = gpio_request(6, "mmc_cd");
+	if (ret)
+		return ret;
+
+	ret = gpio_direction_input(6);
+	if (ret)
+		return ret;
+
+	return !gpio_get_value(6);
+}
+
 int omap_mmc_init(int dev_index, uint host_caps_mask, uint f_max)
 {
 	struct mmc *mmc;
@@ -550,6 +566,7 @@ int omap_mmc_init(int dev_index, uint host_caps_mask, uint f_max)
 	switch (dev_index) {
 	case 0:
 		mmc->priv = (struct hsmmc *)OMAP_HSMMC1_BASE;
+		mmc->getcd = omap_mmc0_getcd;
 		break;
 #ifdef OMAP_HSMMC2_BASE
 	case 1:
